@@ -299,28 +299,20 @@
 
         /* --- 📱 MOBILE RESPONSIVENESS FIX --- */
         @media (max-width: 768px) {
-            #cursor-rocket { display: none; } 
-            * { cursor: auto; } 
-            
-            h1 { font-size: 2.5rem !important; }
-            .logo-text { display: block; font-size: 1.5rem; } 
-            
+            body { cursor: auto; }
+            #cursor-rocket { display: none; }
+            h1 { font-size: 2.2rem !important; }
+            .logo-text { font-size: 1.5rem; display: block; }
             .hamburger { display: block; }
-            
             nav ul {
-                display: none; flex-direction: column; position: absolute;
-                top: 70px; left: 0; width: 100%;
-                background: rgba(255,255,255,0.98); padding: 20px 0;
-                box-shadow: 0 10px 20px rgba(0,0,0,0.1); text-align: center;
+                display: none; flex-direction: column; position: absolute; top: 70px; left: 0; width: 100%;
+                background: rgba(255,255,255,0.98); padding: 20px 0; box-shadow: 0 10px 20px rgba(0,0,0,0.1); text-align: center;
             }
             body.dark-mode nav ul { background: rgba(26, 26, 46, 0.98); }
-            
-            nav ul.active { display: flex; } 
-            nav li { margin-bottom: 10px; }
-            
+            nav ul.active { display: flex; } nav li { margin-bottom: 10px; }
             #hud { top: auto; bottom: 20px; right: auto; left: 20px; font-size: 0.8rem; transform: none; }
             .theme-toggle { bottom: 90px; right: 20px; width: 40px; height: 40px; font-size: 1rem; }
-            .holo-card { transform: none !important; } /* Disable 3D tilt on mobile */
+            .holo-card { transform: none !important; }
             #privacy-container { padding: 24px 16px; }
         }
     </style>
@@ -349,7 +341,7 @@
     <!-- HEADER -->
     <header>
         <div class="header-content">
-            <a href="#" class="logo-container" onclick="nav('home')">
+            <a href="/" class="logo-container" onclick="nav(event, 'home')">
                 <svg class="logo-svg" viewBox="0 0 200 150" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <rect x="25" y="0" width="12" height="15" rx="3" fill="var(--text-main)"/>
                     <rect x="29" y="15" width="4" height="60" fill="var(--text-main)"/>
@@ -378,11 +370,11 @@
 
             <nav>
                 <ul id="nav-list">
-                    <li><a href="#" onclick="nav('home')" class="active" id="link-home">Home</a></li>
-                    <li><a href="#" onclick="nav('games')" id="link-games">Games</a></li>
-                    <li><a href="#" onclick="nav('about')" id="link-about">About Us</a></li>
-                    <li><a href="#" onclick="nav('career')" id="link-career">Career</a></li>
-                    <li><a href="#" onclick="nav('privacy')" id="link-privacy">Privacy</a></li>
+                    <li><a href="/" onclick="nav(event, 'home')" class="active" id="link-home">Home</a></li>
+                    <li><a href="/games" onclick="nav(event, 'games')" id="link-games">Games</a></li>
+                    <li><a href="/about" onclick="nav(event, 'about')" id="link-about">About Us</a></li>
+                    <li><a href="/career" onclick="nav(event, 'career')" id="link-career">Career</a></li>
+                    <li><a href="/privacypolicy" onclick="nav(event, 'privacy')" id="link-privacy">Privacy</a></li>
                 </ul>
             </nav>
         </div>
@@ -396,7 +388,7 @@
                     Astro Rock Games 
                 </h1>
                 <p style="font-size: 1.5rem; margin: 20px 0; color: var(--text-sec);">Click anywhere to fire missiles! Blast the asteroids!</p>
-                <button class="juice-btn" onclick="nav('games'); playSound('click')">Our Games</button>
+                <button class="juice-btn" onclick="nav(event, 'games'); playSound('click')">Our Games</button>
             </div>
 
             <div style="border-top: 2px dashed var(--neon-cyan); padding-top: 2rem;">
@@ -669,7 +661,7 @@
     <footer>
         <p>© 2025 Astro Rock Games. Keep Rocking! 🤘</p>
         <p style="font-size:0.9rem; margin-top:15px;">
-            <a onclick="nav('privacy')">Privacy Policy</a>
+            <a href="/privacypolicy" onclick="nav(event, 'privacy')">Privacy Policy</a>
         </p>
     </footer>
 
@@ -833,13 +825,15 @@
         function closeJobModal() { modal.classList.remove('modal-active'); setTimeout(()=>{modal.style.display='none'; document.getElementById('appForm').reset();},300); }
         function submitApplication(e) { e.preventDefault(); playSound('click'); setTimeout(()=>{playSound('success'); alert("MESSAGE RECEIVED! 🚀"); closeJobModal();}, 1000); }
 
-        // Navigation
-        function nav(page) {
+        // --- 6. NAVIGATION W/ URL CHANGES ---
+        function nav(e, page) {
+            if (e) e.preventDefault(); // Stop the default `#` jump link
+
+            // Handle UI switching
             document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active'));
             document.getElementById(page).classList.add('active');
-            document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
             
-            // Handle active state for nav links if they exist
+            document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
             const link = document.getElementById('link-'+page);
             if(link) link.classList.add('active');
             
@@ -848,8 +842,54 @@
             // Close mobile menu if open
             const navList = document.getElementById('nav-list');
             if(navList) navList.classList.remove('active');
+
+            // --- HTML5 HISTORY API (Changes the URL without reloading) ---
+            let newPath = '/' + page;
+            if (page === 'home') newPath = '/';
+            if (page === 'privacy') newPath = '/privacypolicy';
+            
+            window.history.pushState({ page: page }, '', newPath);
         }
-        
+
+        // Handle the Back/Forward browser buttons properly
+        window.addEventListener('popstate', (e) => {
+            let page = 'home';
+            if (e.state && e.state.page) {
+                page = e.state.page;
+            } else {
+                const path = window.location.pathname;
+                if (path.includes('games')) page = 'games';
+                if (path.includes('about')) page = 'about';
+                if (path.includes('career')) page = 'career';
+                if (path.includes('privacypolicy')) page = 'privacy';
+            }
+            
+            // Switch UI without pushing another history state
+            document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active'));
+            document.getElementById(page).classList.add('active');
+            
+            document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
+            const link = document.getElementById('link-'+page);
+            if(link) link.classList.add('active');
+        });
+
+        // Initialize on page load (just in case they refresh directly on /privacypolicy)
+        window.addEventListener('DOMContentLoaded', () => {
+            const path = window.location.pathname;
+            let page = 'home';
+            if (path.includes('games')) page = 'games';
+            if (path.includes('about')) page = 'about';
+            if (path.includes('career')) page = 'career';
+            if (path.includes('privacypolicy')) page = 'privacy';
+            
+            document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active'));
+            document.getElementById(page).classList.add('active');
+            
+            document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
+            const link = document.getElementById('link-'+page);
+            if(link) link.classList.add('active');
+        });
+
         window.addEventListener('resize', () => {
             if(window.innerWidth > 768) {
                 const navList = document.getElementById('nav-list');
